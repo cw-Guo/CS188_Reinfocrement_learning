@@ -47,7 +47,7 @@ class ValueIterationAgent(ValueEstimationAgent):
           and then act according to the resulting policy.
 
           Some useful mdp methods you will use:
-              mdp.getStates()
+              mdp.getStates() # get all the states
               mdp.getPossibleActions(state)
               mdp.getTransitionStatesAndProbs(state, action)
               mdp.getReward(state, action, nextState)
@@ -61,14 +61,35 @@ class ValueIterationAgent(ValueEstimationAgent):
 
     def runValueIteration(self):
         # Write value iteration code here
-        "*** YOUR CODE HERE ***"
-
-
+        states = self.mdp.getStates() # get all the possible state
+        lifetime = self.iterations
+        curr_k = 1 # next ietration
+        while curr_k <= lifetime:
+            for curr_state in states:
+                actions = self.mdp.getPossibleActions(curr_state) # available actionss
+                if actions == (): # terminal
+                    new_pair = tuple((curr_state, curr_k))
+                    self.values[new_pair] = self.values[curr_state,curr_k-1]
+                else:
+                    optimal_action_bonus = -100000
+                    for action in actions:
+                        allPossibleList = self.mdp.getTransitionStatesAndProbs(curr_state, action) # it is a list of (nextState, prob) pairs
+                        bonus = 0
+                        for nextState, prob in allPossibleList:
+                            reward = self.mdp.getReward(curr_state, action, nextState)
+                            value_k_1 = self.values[(nextState, curr_k -1)] # if not in the dict, default value = 0 --->refer to util.Counter
+                            bonus += prob * (reward + self.discount * value_k_1) # ballmen Equation
+                        if bonus > optimal_action_bonus:
+                            optimal_action_bonus = bonus
+                            optimal_action = action
+                    new_pair = tuple((curr_state, curr_k))
+                    self.values[new_pair] = optimal_action_bonus
+            curr_k += 1
     def getValue(self, state):
         """
           Return the value of the state (computed in __init__).
         """
-        return self.values[state]
+        return self.values[(state,self.iterations)]
 
 
     def computeQValueFromValues(self, state, action):
@@ -77,6 +98,14 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
+        allPossibleList = self.mdp.getTransitionStatesAndProbs(state, action)
+        bonus = 0
+        for nextState, prob in allPossibleList:
+            reward = self.mdp.getReward(state, action, nextState)
+            value_k = self.values[(nextState, self.iterations)] # if not in the dict, default value = 0 --->refer to util.Counter
+            bonus += prob * (reward + self.discount * value_k) # ballmen Equation
+        return bonus
+
         util.raiseNotDefined()
 
     def computeActionFromValues(self, state):
@@ -89,6 +118,22 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
+        actions = self.mdp.getPossibleActions(state) # available actions
+        if actions == (): # terminal
+            return None
+        optimal_action_bonus = -100000 # quite small
+        optimal_action = None
+        for action in actions:
+            allPossibleList = self.mdp.getTransitionStatesAndProbs(state, action) # it is a list of (nextState, prob) pairs
+            bonus = 0
+            for nextState, prob in allPossibleList:
+                reward = self.mdp.getReward(state, action, nextState)
+                value_k = self.values[(nextState, self.iterations)] # if not in the dict, default value = 0 --->refer to util.Counter
+                bonus += prob * (reward + self.discount * value_k) # ballmen Equation
+            if bonus > optimal_action_bonus:
+                optimal_action_bonus = bonus
+                optimal_action = action
+        return optimal_action
         util.raiseNotDefined()
 
     def getPolicy(self, state):
