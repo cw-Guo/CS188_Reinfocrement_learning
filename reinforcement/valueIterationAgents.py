@@ -224,4 +224,51 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
 
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
+        def getPredecessors(curr_state): # get the predecessors
+            states = self.mdp.getStates()
+            predecessors = set()
+            for state in states:
+                actions = self.mdp.getPossibleActions(state)
+                if actions == ():
+                    continue    
+                else:
+                    for action in actions:
+                        allPossibleList = self.mdp.getTransitionStatesAndProbs(state, action) # it is a list of (nextState, prob) pairs
+                        for pair in allPossibleList:
+                            if (pair[0] == curr_state) and (pair[1] != 0):
+                                predecessors.add(state)
+            return predecessors
+            
+        def getmaxQvalue(curr_state):
+            actions = self.mdp.getPossibleActions(curr_state)
+            maxQ = -1000000
+            if actions ==(): # terminate
+                return None
+            for action in actions:
+                temp = self.computeQValueFromValues(curr_state, action)
+                if temp > maxQ:
+                    maxQ = temp
+            return maxQ
 
+        queue = util.PriorityQueue() #initialize 
+        states = self.mdp.getStates()
+        for state in states:
+            if state =='TERMINAL_STATE':
+                continue
+            maxQ = getmaxQvalue(state)
+            diff = abs(self.values[state] - maxQ)
+            queue.push(state, -diff) # we wanna higher  diff 
+        
+        lifetime = self.iterations
+        for i in range(lifetime):
+            if queue.isEmpty():
+                return 
+            currState = queue.pop()
+            if currState != 'TERMINAL_STATE':
+                self.values[currState]  = getmaxQvalue(currState)
+                for preState in getPredecessors(currState):
+                    maxpreQ = getmaxQvalue(preState) 
+                    diff = abs(self.values[preState] - maxpreQ)
+                    if diff > self.theta:
+                        queue.update(preState, -diff)
+            

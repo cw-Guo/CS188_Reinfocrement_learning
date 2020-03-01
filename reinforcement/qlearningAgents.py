@@ -102,6 +102,7 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         "*** YOUR CODE HERE ***"
+        
         util.raiseNotDefined()
 
     def getPolicy(self, state):
